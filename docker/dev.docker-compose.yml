@@ -1,0 +1,74 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: "dev-redis"
+    command: redis-server --requirepass adsteamredis
+    ports:
+      - "6379:6379"
+    networks:
+      dev_network:
+        aliases:
+          - dev-redis
+  postgres-netad:
+    image: "postgres:11.3"
+    restart: always
+    environment:
+      POSTGRES_DB: super_netad
+      POSTGRES_USER: adsteam_user
+      POSTGRES_PASSWORD: adsteam_pwd
+      # PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /tmp/smit_db:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    container_name: "dev-postgres"
+    networks:
+      dev_network:
+        aliases:
+          - dev-postgres
+  amqp:
+    image: rabbitmq:3
+    restart: always
+    container_name: "dev-broker"
+    environment:
+      - RABBITMQ_DEFAULT_PASS=rabbit_pass
+      - RABBITMQ_DEFAULT_USER=rabbit_user
+    ports:
+      - "5672:5672"
+    networks:
+      dev_network:
+        aliases:
+          - dev-broker
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: "dev-jaeger"
+    ports:
+      - "6832:6832/udp"
+      - "16686:16686"
+    networks:
+      dev_network:
+        aliases:
+          - dev-jaeger
+  # host-api-gateway:
+  #   container_name: "api-gateway"
+  #   build:
+  #     context: ../
+  #     dockerfile: Dockerfile
+  #     args:
+  #       buildno: 1
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - dev.docker-compose.env
+  #   entrypoint: docker/entrypoint.sh
+  #   networks:
+  #     dev_network:
+networks:
+  dev_network:
+    name: "dev_network"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
